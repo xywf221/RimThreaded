@@ -10,7 +10,7 @@ using Verse.AI;
 
 namespace RimThreaded
 {
-    
+
     public class ThinkNode_PrioritySorter_Patch
     {
         public static bool TryIssueJobPackage(ThinkNode_PrioritySorter __instance, ref ThinkResult __result, Pawn pawn, JobIssueParams jobParams)
@@ -63,7 +63,7 @@ namespace RimThreaded
             }
             __result = ThinkResult.NoJob;
             return false;
-		}
+        }
     }
-    
+
 }

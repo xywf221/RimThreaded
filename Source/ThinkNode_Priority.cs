@@ -10,29 +10,32 @@ using Verse.AI;
 
 namespace RimThreaded
 {
-    
+
     public class ThinkNode_Priority_Patch
     {
 
         public static bool TryIssueJobPackage(ThinkNode_Priority __instance, ref ThinkResult __result, Pawn pawn, JobIssueParams jobParams)
         {
-	    ThinkNode subNode;
-            for (int index = 0; index < __instance.subNodes.Count; ++index )
+            ThinkNode subNode;
+            for (int index = 0; index < __instance.subNodes.Count; ++index)
             {
-		        try {
-			        subNode = __instance.subNodes[index];
-		        } catch (ArgumentOutOfRangeException) { break; }
                 try
-                {                    
+                {
+                    subNode = __instance.subNodes[index];
+                }
+                catch (ArgumentOutOfRangeException) { break; }
+                try
+                {
                     if (subNode != null)
                     {
                         ThinkResult thinkResult = subNode.TryIssueJobPackage(pawn, jobParams);
                         if (null == thinkResult)
                             break;
-                        if (thinkResult.IsValid) {
+                        if (thinkResult.IsValid)
+                        {
                             __result = thinkResult;
-			                return false;
-			            }
+                            return false;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -42,7 +45,7 @@ namespace RimThreaded
             }
             __result = ThinkResult.NoJob;
             return false;
-		}
+        }
     }
-    
+
 }

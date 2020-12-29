@@ -50,10 +50,11 @@ namespace RimThreaded
         public static bool SingleTickComplete = true;
 
         //MainThreadRequests
-        
+        //主线程 部分函数只能再主函数中调用
         public static Dictionary<int, EventWaitHandle> mainRequestWaits = new Dictionary<int, EventWaitHandle>();
         public static Dictionary<int, object[]> tryMakeAndPlayRequests = new Dictionary<int, object[]>();
 
+        //用于函数调用。也是再主线程里面跑的 request写入请求 results读取结果
         public static Dictionary<int, object[]> safeFunctionRequests =
             new Dictionary<int, object[]>();
         public static Dictionary<int, object> safeFunctionResults =
@@ -138,7 +139,7 @@ namespace RimThreaded
         //WindManager
         public static int plantMaterialsCount = 0;
         public static float plantSwayHead = 0;
-        
+
         //FactionManager
         public static List<Faction> allFactions = null;
         public static int allFactionsTicks = 0;
@@ -194,7 +195,7 @@ namespace RimThreaded
 
             monitorThread = new Thread(() => MonitorThreads());
             monitorThread.Start();
-            for(int index = 0; index < totalPrepsCount; index++)
+            for (int index = 0; index < totalPrepsCount; index++)
             {
                 prepEventWaitStarts.Add(new ManualResetEvent(false));
             }
@@ -274,7 +275,7 @@ namespace RimThreaded
             {
                 eventWaitStart.WaitOne();
                 PrepareWorkLists();
-                for(int loopsCompleted = listsFullyProcessed; loopsCompleted < totalPrepsCount; loopsCompleted++)
+                for (int loopsCompleted = listsFullyProcessed; loopsCompleted < totalPrepsCount; loopsCompleted++)
                 {
                     prepEventWaitStarts[loopsCompleted].WaitOne();
                     ExecuteTicks();
@@ -456,7 +457,7 @@ namespace RimThreaded
             {
                 List<Map> maps = Find.Maps;
                 for (int j = 0; j < maps.Count; j++)
-                {                    
+                {
                     maps[j].MapPostTick();
                 }
                 prepEventWaitStarts[Interlocked.Increment(ref currentPrepsDone)].Set(); //WildPlantSpawner
@@ -495,7 +496,7 @@ namespace RimThreaded
                     }
                     index = Interlocked.Decrement(ref thingListNormalTicks);
                 }
-                if(index == -1)
+                if (index == -1)
                 {
                     Interlocked.Increment(ref listsFullyProcessed);
                 }
@@ -603,9 +604,10 @@ namespace RimThreaded
                     try
                     {
                         worldObjects[index].Tick();
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
-                            Log.Error("Exception ticking " + worldObjects[index].ToStringSafe() + ": " + ex);
+                        Log.Error("Exception ticking " + worldObjects[index].ToStringSafe() + ": " + ex);
                     }
                     index = Interlocked.Decrement(ref worldObjectsTicks);
                 }
@@ -625,10 +627,11 @@ namespace RimThreaded
                     try
                     {
                         SteadyEnvironmentEffects_Patch.DoCellSteadyEffects(steadyEnvironmentEffectsInstance, c);
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
-                            Log.Error("Exception ticking steadyEnvironmentEffectsCells " + index.ToStringSafe() + ": " + ex);
-                    }                    
+                        Log.Error("Exception ticking steadyEnvironmentEffectsCells " + index.ToStringSafe() + ": " + ex);
+                    }
                     //Interlocked.Increment(ref SteadyEnvironmentEffects_Patch.cycleIndex(steadyEnvironmentEffectsInstance));
                     index = Interlocked.Decrement(ref steadyEnvironmentEffectsTicks);
                 }
@@ -646,9 +649,10 @@ namespace RimThreaded
                     try
                     {
                         WindManager_Patch.plantMaterials[index].SetFloat(ShaderPropertyIDs.SwayHead, plantSwayHead);
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
-                            Log.Error("Exception ticking " + WindManager_Patch.plantMaterials[index].ToStringSafe() + ": " + ex);
+                        Log.Error("Exception ticking " + WindManager_Patch.plantMaterials[index].ToStringSafe() + ": " + ex);
                     }
                     index = Interlocked.Decrement(ref plantMaterialsCount);
                 }
@@ -666,9 +670,10 @@ namespace RimThreaded
                     try
                     {
                         allFactions[index].FactionTick();
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
-                            Log.Error("Exception ticking " + allFactions[index].ToStringSafe() + ": " + ex);
+                        Log.Error("Exception ticking " + allFactions[index].ToStringSafe() + ": " + ex);
                     }
                     index = Interlocked.Decrement(ref allFactionsTicks);
                 }
@@ -684,7 +689,8 @@ namespace RimThreaded
                 while (index >= 0)
                 {
                     int cycleIndex = (WildPlantSpawnerCycleIndexOffset - index) % WildPlantSpawnerArea;
-                    try { 
+                    try
+                    {
                         IntVec3 intVec = WildPlantSpawnerCellsInRandomOrder.Get(cycleIndex);
 
                         if ((WildPlantSpawnerCycleIndexOffset - index) > WildPlantSpawnerArea)
@@ -787,7 +793,8 @@ namespace RimThreaded
                             try
                             {
                                 wc.WorldComponentTick();
-                            } catch(Exception ex)
+                            }
+                            catch (Exception ex)
                             {
                                 Log.Error("Exception ticking World Component: " + wc.ToStringSafe() + ex);
                             }
@@ -853,23 +860,27 @@ namespace RimThreaded
                     {
                         if (!eventWaitDone.WaitOne(timeoutMS))
                         {
+                            //超时豁免线程
                             bool timoutExempt;
                             lock (timeoutExemptThreads2)
                             {
                                 timoutExempt = timeoutExemptThreads2.ContainsKey(tID2);
                             }
-                                if (!timoutExempt)
+
+                            if (!timoutExempt)
                             {
                                 Log.Error("Thread: " + tID2.ToString() + " did not finish within " + timeoutMS.ToString() + "ms. Restarting thread...");
                                 AbortWorkerThread(tID2);
                                 CreateWorkerThread();
-                            } else
+                            }
+                            else
                             {
                                 int timeoutOverride;
                                 lock (timeoutExemptThreads2)
                                 {
                                     timeoutOverride = timeoutExemptThreads2[tID2];
                                 }
+                                //等待.如果还有就移除.
                                 eventWaitDone.WaitOne(timeoutOverride);
                                 lock (timeoutExemptThreads2)
                                 {
@@ -879,7 +890,7 @@ namespace RimThreaded
                                     }
                                 }
                             }
-                        }                            
+                        }
                     }
                     else
                     {
@@ -933,7 +944,7 @@ namespace RimThreaded
                 {
                     PathFinder_Patch.closedValues.Remove(managedThreadID);
                 }
-                lock(ThingOwnerUtility_Patch.tmpHoldersDict)
+                lock (ThingOwnerUtility_Patch.tmpHoldersDict)
                 {
                     ThingOwnerUtility_Patch.tmpHoldersDict.Remove(managedThreadID);
                 }
@@ -989,16 +1000,19 @@ namespace RimThreaded
                 object result;
                 object[] parameters = (object[])functionAndParameters[1];
 
-                if (functionAndParameters[0] is Func<object[], object> safeFunction) {
+                if (functionAndParameters[0] is Func<object[], object> safeFunction)
+                {
                     result = safeFunction(parameters);
                     safeFunctionResults[key] = result;
-                } else if (functionAndParameters[0] is Action<object[]> safeAction)
+                }
+                else if (functionAndParameters[0] is Action<object[]> safeAction)
                 {
                     safeAction(parameters);
-                } else
+                }
+                else
                 {
                     Log.Error("First perameter of thread-safe function request was not an action or function");
-                }            
+                }
                 if (mainRequestWaits.TryGetValue(key, out EventWaitHandle eventWaitStart))
                     eventWaitStart.Set();
                 else

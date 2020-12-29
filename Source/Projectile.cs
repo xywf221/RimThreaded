@@ -32,16 +32,18 @@ namespace RimThreaded
 			AccessTools.FieldRefAccess<Projectile, Sustainer>("ambientSustainer");
 		public static AccessTools.FieldRef<Projectile, ThingDef> targetCoverDef =
 			AccessTools.FieldRefAccess<Projectile, ThingDef>("targetCoverDef");
-		 
 
-		//public static MethodInfo ThrowDebugText =
-		//typeof(Projectile).GetMethod("ThrowDebugText", BindingFlags.NonPublic | BindingFlags.Instance);
-		//public static MethodInfo CanHit =
-		//typeof(Projectile).GetMethod("CanHit", BindingFlags.NonPublic | BindingFlags.Instance);
-		//public static MethodInfo ImpactReflected =
-		//typeof(Projectile).GetMethod("Impact", BindingFlags.NonPublic | BindingFlags.Instance);
 
-		public static void Impact(Projectile __instance, Thing hitThing)
+        //public static MethodInfo ThrowDebugText =
+        //typeof(Projectile).GetMethod("ThrowDebugText", BindingFlags.NonPublic | BindingFlags.Instance);
+        //public static MethodInfo CanHit =
+        //typeof(Projectile).GetMethod("CanHit", BindingFlags.NonPublic | BindingFlags.Instance);
+        //public static MethodInfo ImpactReflected =
+        //typeof(Projectile).GetMethod("Impact", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        //public static MethodInfo ImpactReflected = AccessTools.Method();
+
+        public static void Impact(Projectile __instance, Thing hitThing)
         {
 			if(__instance is Bullet bullet)
             {
@@ -75,7 +77,13 @@ namespace RimThreaded
 			GenClamor.DoClamor(projectile, 2.1f, ClamorDefOf.Impact);
 			projectile.Destroy();
 		}
-		
+
+        public static void OverrideImpact(Projectile projectile, Thing hitThing)
+        {
+            //简单来说这个类就是调用自己的Impact函数不用每个类都转成 Projectile 然后在判断调用
+            AccessTools.Method(projectile.GetType(), "Impact").Invoke(projectile, new object[] { hitThing });
+        }
+
         private static void ThrowDebugText(Projectile __instance, string text, IntVec3 c)
 		{
 			if (DebugViewSettings.drawShooting)
@@ -98,19 +106,17 @@ namespace RimThreaded
 			bool flag = false;
 			foreach (IntVec3 c in thing.OccupiedRect())
 			{
-                //List<Thing> thingList = c.GetThingList(__instance.Map);
-                IEnumerable<Thing> enumThing = __instance.Map.thingGrid.ThingsAt(c);
+                List<Thing> thingList = c.GetThingList(__instance.Map); 
 				bool flag2 = false;
-				//for (int i = 0; i < thingList.Count; i++)
-				foreach (Thing tlThing in enumThing) 
-				{
-					if (tlThing != thing && tlThing.def != null && tlThing.def.Fillage == FillCategory.Full && tlThing.def.Altitude >= thing.def.Altitude)
-					{
-						flag2 = true;
-						break;
-					}
-				}
-				if (!flag2)
+                for (int i = 0; i < thingList.Count; i++)
+                {
+                    if (thingList[i] != thing && thingList[i].def.Fillage == FillCategory.Full && thingList[i].def.Altitude >= thing.def.Altitude)
+                    {
+                        flag2 = true;
+                        break;
+                    }
+                }
+                if (!flag2)
 				{
 					flag = true;
 					break;
@@ -165,12 +171,12 @@ namespace RimThreaded
 				if (__instance.usedTarget.Thing is Pawn thing && thing.GetPosture() != PawnPosture.Standing && ((double)(origin(__instance) - destination(__instance)).MagnitudeHorizontalSquared() >= 20.25 && !Rand.Chance(0.2f)))
 				{
 					ThrowDebugText(__instance, "miss-laying", __instance.Position);
-					//Impact.Invoke(__instance, new object[] { (Thing)null });
-					Impact(__instance, null);
+                    //Impact.Invoke(__instance, new object[] { (Thing)null });
+                    OverrideImpact(__instance, null);
 				}
 				else
 				{
-					Impact(__instance, __instance.usedTarget.Thing);
+                    OverrideImpact(__instance, __instance.usedTarget.Thing);
 				}
 			}
 			else
@@ -201,12 +207,12 @@ namespace RimThreaded
 					if (Rand.Chance(num))
 					{
 						ThrowDebugText(__instance, "hit-" + num.ToStringPercent(), __instance.Position);
-						Impact(__instance, cellThingsFiltered.RandomElement<Thing>());
+                        OverrideImpact(__instance, cellThingsFiltered.RandomElement<Thing>());
 						return false;
 					}
 					ThrowDebugText(__instance, "miss-" + num.ToStringPercent(), __instance.Position);
 				}
-				Impact(__instance, null);
+                OverrideImpact(__instance, null);
 			}
 			return false;
 		}
@@ -334,7 +340,7 @@ namespace RimThreaded
 		{
 			if(__instance is ThingWithComps twc)
             {
-				if (comps(twc) != null)
+                if (comps(twc) != null)
 				{
 					int index = 0;
 					for (int count = comps(twc).Count; index < count; ++index)

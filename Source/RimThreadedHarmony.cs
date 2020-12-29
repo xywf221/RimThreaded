@@ -17,6 +17,7 @@ using System.Threading;
 using Verse.Grammar;
 using Verse.AI.Group;
 using static HarmonyLib.AccessTools;
+using RimWorld.QuestGen;
 
 namespace RimThreaded
 {
@@ -1465,6 +1466,11 @@ namespace RimThreaded
 			//Prefix(original, patched, "Tick");
 			patched = typeof(Building_Trap_Transpile);
 			Transpile(original, patched, "Tick");
+            //测试修补主要是用来寻找bug原因的
+            original = typeof(QuestNode);
+            patched = typeof(QuestNode_Patch);
+            Prefix(original, patched, "TestRun");
+
 
 			//MOD COMPATIBILITY
 
