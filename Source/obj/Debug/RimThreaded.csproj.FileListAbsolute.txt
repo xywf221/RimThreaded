@@ -1,7 +1,0 @@
-E:\git\RimThreaded\Source\obj\Debug\RimThreaded.csproj.CoreCompileInputs.cache
-E:\git\RimThreaded\Assemblies\RimThreaded.dll
-E:\git\RimThreaded\Assemblies\RimThreaded.pdb
-E:\git\RimThreaded\Source\obj\Debug\RimThreaded.csproj.CopyComplete
-E:\git\RimThreaded\Source\obj\Debug\RimThreaded.dll
-E:\git\RimThreaded\Source\obj\Debug\RimThreaded.pdb
-E:\git\RimThreaded\Source\obj\Debug\RimThreaded.csprojAssemblyReference.cache
